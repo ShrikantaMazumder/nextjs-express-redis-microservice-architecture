@@ -1,6 +1,6 @@
 "use strict";
-import express from "express";
 import dotenv from "dotenv";
+import express from "express";
 
 
 dotenv.config();
@@ -12,7 +12,7 @@ const app = express()
 
 // endpoints
 app.get("/", (req, res) => {
-	res.send("Server running")
+	res.send("Server running, hello")
 })
 
 app.listen(expressPort, () => console.log(`Server running on: ${expressPort}`))

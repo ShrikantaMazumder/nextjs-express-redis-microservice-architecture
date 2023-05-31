@@ -8,6 +8,10 @@ services:
       - "3000:3000"
     networks:
       - mynetwork
+    volumes:
+      - ./client-app/.:/app
+      - /app/node_modules
+      - /app/.next
     depends_on:
       - redis
       - db
@@ -16,6 +20,7 @@ services:
 
   api-server:
     container_name: "api-server"
+    restart: always
     build: ./api-server/.
     environment:
       - PORT=5001
@@ -32,6 +37,9 @@ services:
       - "5001:5001"
     networks:
       - mynetwork
+    volumes:
+      - ./api-server:/app
+      - /app/node_modules
     depends_on:
       - db
       - redis
@@ -52,6 +60,8 @@ services:
       - MYSQL_TABLE=${MYSQL_TABLE}
     networks:
       - mynetwork
+    volumes:
+      - ./worker-server/.:/app
     depends_on:
       - db
       - redis
