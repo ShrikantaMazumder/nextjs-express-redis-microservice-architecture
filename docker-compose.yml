@@ -46,6 +46,7 @@ services:
       - worker-server
   worker-server:
     container_name: "worker-server"
+    restart: always
     build: ./worker-server/.
     environment:
       - PORT=5002
@@ -61,7 +62,8 @@ services:
     networks:
       - mynetwork
     volumes:
-      - ./worker-server/.:/app
+      - ./worker-server:/app
+      - /app/node_modules
     depends_on:
       - db
       - redis
