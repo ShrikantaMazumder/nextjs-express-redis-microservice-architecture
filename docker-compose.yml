@@ -61,6 +61,8 @@ services:
       - MYSQL_TABLE=${MYSQL_TABLE}
     networks:
       - mynetwork
+    ports:
+      - "5002:5002"
     volumes:
       - ./worker-server:/app
       - /app/node_modules
@@ -73,8 +75,8 @@ services:
     build: ./db/.
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-    # ports:
-    #   - '3306:3306'
+    ports:
+      - '3306:3306'
     networks:
       - mynetwork
 
@@ -83,8 +85,8 @@ services:
     image: "redis:latest"
     restart: always
     command: redis-server --save 20 1 --loglevel warning --requirepass mypassword
-    # ports:
-    #   - '6379:6379'
+    ports:
+      - '6379:6379'
     networks:
       - mynetwork
 
