@@ -42,11 +42,6 @@ const getData = async () => {
   return sqlConnection.execute(sqlQuery);
 };
 
-const createData = async (data) => {
-	const insertQuery = `INSERT INTO ${sqlTable} (data) VALUES ('${data}')`
-	const sqlConnection = await mysql.createConnection(dbConfig)
-	sqlConnection.execute(insertQuery)
-}
 
 // Redis cached helpers
 const setRedisCache = async (data) => {
@@ -67,6 +62,13 @@ const deleteRedisCache = async () => {
 	await redisClient.connect()
 	await redisClient.del("key")
 	return redisClient.disconnect()
+}
+
+const publishToRedis = async (data) => {
+	await redisClient.connect()
+	const subscriberCount = await redisClient.publish(redisChannel, data)
+	await redisClient.disconnect();
+	return subscriberCount;
 }
 
 // express config
@@ -115,7 +117,8 @@ app.post("/create", async (req, res) => {
       	throw new Error("Missing data");
     }
 
-	await createData(data)
+	const subscriberCount = await publishToRedis(data)
+	console.log({ subscriberCount});
 	await deleteRedisCache()
     return res.status(200).json({
 		message: "Insert request taken."

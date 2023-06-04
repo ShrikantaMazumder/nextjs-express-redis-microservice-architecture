@@ -1,9 +1,9 @@
-"use strict";
+"use strict"
 import dotenv from "dotenv";
-import { createClient } from "redis";
 import mysql from "mysql2/promise";
+import { createClient } from "redis";
 
-dotenv.config();
+dotenv.config()
 
 // redis
 const redisUsername = process.env.REDIS_USERNAME || "";
@@ -19,7 +19,6 @@ const sqlPassword = process.env.MYSQL_PASSWORD || "";
 const sqlDatabase = process.env.MYSQL_DATABASE || "";
 const sqlTable = process.env.MYSQL_TABLE || "";
 
-// configs
 const redisUrl = `redis://${redisUsername}:${redisPassword}@${redisHost}:${redisPort}`;
 const dbConfig = {
   host: sqlHost,
@@ -28,33 +27,33 @@ const dbConfig = {
   database: sqlDatabase,
 };
 
-// helper fn for DB
+// helper functions
 const createData = async (data) => {
-  const sqlQuery = `INSERT INTO ${sqlTable} (data) VALUES ('${data}')`;
+  const insertQuery = `INSERT INTO ${sqlTable} (data) VALUES ('${data}')`;
   const sqlConnection = await mysql.createConnection(dbConfig);
-  return sqlConnection.execute(sqlQuery);
+  sqlConnection.execute(insertQuery);
 };
 
+// redis action
 (function () {
-  const subscriber = createClient({ url: redisUrl });
+  const subscriber = createClient({url: redisUrl});
   subscriber.connect();
 
   // redis status logger
-  subscriber.on("error", (err) => console.log("Redis error", err));
-  subscriber.on("connect", () => console.log("\n Connected to Redis \n"));
-  subscriber.on("reconnecting", () => {
-    console.log("\nReconnecting to Redis.\n");
-  });
+  subscriber.on("error", (error) => console.log("Redis client error", error));
+  subscriber.on("connect", () => console.log("Connected to redis"));
+  subscriber.on("reconnecting", () => console.log("Reconnecting to Redis"));
   subscriber.on("ready", () => {
-    console.log("\n Redis ready for action! \n");
-    // call back fn is required
+    console.log("Redis ready for action!");
+
     subscriber.subscribe(redisChannel, async (message) => {
-      console.log("subscriber service:- ", message);
+      console.log("Subscriber service: - ", message);
+
       try {
         await createData(message);
       } catch (error) {
         console.log({ error });
       }
-    });
-  });
-})();
+    })
+  })
+})()
