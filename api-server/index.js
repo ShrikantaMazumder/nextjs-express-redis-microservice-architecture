@@ -1,5 +1,6 @@
 "use strict";
-import cors from 'cors';
+import bodyParser from "body-parser";
+import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import mysql from "mysql2/promise";
@@ -42,40 +43,40 @@ const getData = async () => {
   return sqlConnection.execute(sqlQuery);
 };
 
-
 // Redis cached helpers
 const setRedisCache = async (data) => {
-	const value = JSON.stringify({isCached: true, data})
-	await redisClient.connect()
-	await redisClient.set('key', value)
-	return redisClient.disconnect()
-}
+  const value = JSON.stringify({ isCached: true, data });
+  await redisClient.connect();
+  await redisClient.set("key", value);
+  return redisClient.disconnect();
+};
 
 const getRedisCache = async () => {
-	await redisClient.connect()
-	const cachedData = await redisClient.get("key")
-	await redisClient.disconnect();
-	return cachedData
-}
+  await redisClient.connect();
+  const cachedData = await redisClient.get("key");
+  await redisClient.disconnect();
+  return cachedData;
+};
 
 const deleteRedisCache = async () => {
-	await redisClient.connect()
-	await redisClient.del("key")
-	return redisClient.disconnect()
-}
+  await redisClient.connect();
+  await redisClient.del("key");
+  return redisClient.disconnect();
+};
 
 const publishToRedis = async (data) => {
-	await redisClient.connect()
-	const subscriberCount = await redisClient.publish(redisChannel, data)
-	await redisClient.disconnect();
-	return subscriberCount;
-}
+  await redisClient.connect();
+  const subscriberCount = await redisClient.publish(redisChannel, data);
+  await redisClient.disconnect();
+  return subscriberCount;
+};
 
 // express config
 const app = express();
-app.use(cors())
-app.use(express.json())
-app.use(express.urlencoded({ extended: false }))
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({ extended: false }));
 
 // endpoints
 app.get("/", (req, res) => {
@@ -84,17 +85,17 @@ app.get("/", (req, res) => {
 
 app.get("/data", async (_, res) => {
   try {
-	const cachedData = await getRedisCache()
+    const cachedData = await getRedisCache();
 
-	if (cachedData) {
-		const result = JSON.parse(cachedData)
-		return res.status(200).json({
-			message: "success",
-			...result
-		})
-	}
+    if (cachedData) {
+      const result = JSON.parse(cachedData);
+      return res.status(200).json({
+        message: "success",
+        ...result,
+      });
+    }
     const [data, _] = await getData();
-	await setRedisCache(data)
+    await setRedisCache(data);
 
     return res.status(200).json({
       message: "success",
@@ -102,33 +103,35 @@ app.get("/data", async (_, res) => {
       data,
     });
   } catch (error) {
-	console.log({error});
-	res.status(500).json({
-		message: "error",
-		error
-	})
+    console.log({ error });
+    res.status(500).json({
+      message: "error",
+      error,
+    });
   }
 });
 
 app.post("/create", async (req, res) => {
-	const {data} = req.body
-	try {
-		if (!data) {
-      	throw new Error("Missing data");
+	console.log("req", req);
+  const { data } = req.body;
+  console.log("body", req.body);
+  try {
+    if (!data) {
+      throw new Error("Missing data");
     }
 
-	const subscriberCount = await publishToRedis(data)
-	console.log({ subscriberCount});
-	await deleteRedisCache()
+    const subscriberCount = await publishToRedis(data);
+    console.log({ subscriberCount });
+    await deleteRedisCache();
     return res.status(200).json({
-		message: "Insert request taken."
-	});
-	} catch (error) {
-		console.log(error);
-		return res.status(500).json({
-			message: error.message
-		})
-	}
-})
+      message: "Insert request taken.",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: error.message,
+    });
+  }
+});
 
 app.listen(expressPort, () => console.log(`Server running on: ${expressPort}`));
